@@ -4,7 +4,7 @@ interface BLEContextType {
     device: BluetoothDevice | null;
     server: BluetoothRemoteGATTServer | null;
     services: BluetoothRemoteGATTService[];
-    gattServices: GattService[];
+    metaData: GattService[];
     characteristics: Map<string, GattCharacteristicData>;
     connectToDevice: () => Promise<void>;
     disconnectDevice: () => void;
@@ -13,23 +13,25 @@ interface BLEContextType {
 interface BLEProviderProps {
     children: React.ReactNode;
     options?: RequestDeviceOptions;
-    gattServices?: GattService[];
+    metaData?: GattService[];
 }
 
 export interface GattService {
+    name: string;
     uuid: string;
     characteristics: GattCharacteristic[];
 }
 
 export interface GattCharacteristic {
+    name: string;
     uuid: string;
 }
 
-export type GattCharacteristicData = Map<BluetoothRemoteGATTCharacteristic, DataView | null>;
+export type GattCharacteristicData = Map<BluetoothRemoteGATTCharacteristic, { service: string, name: string, data: DataView | null }>;
 
 const BLEContext = createContext<BLEContextType | null>(null);
 
-export const BLEProvider = ({ children, options = { acceptAllDevices: true }, gattServices = [] }: BLEProviderProps) => {
+export const BLEProvider = ({ children, options = { acceptAllDevices: true }, metaData = [] }: BLEProviderProps) => {
     const [device, setDevice] = useState<BluetoothDevice | null>(null);
     const [server, setServer] = useState<BluetoothRemoteGATTServer | null>(null);
     const [services, setServices] = useState<BluetoothRemoteGATTService[]>([]);
@@ -56,7 +58,7 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, ga
     const registerPrimaryServices = async (server: BluetoothRemoteGATTServer) => {
         setServices([]);
         let services = [];
-        for (const service of gattServices!) {
+        for (const service of metaData!) {
             const primaryService = await server.getPrimaryService(service.uuid);
             if (primaryService) services.push(primaryService);
         };
@@ -66,16 +68,20 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, ga
 
     const registerGattCharacteristics = async (services: BluetoothRemoteGATTService[]) => {
         let serviceMap: Map<string, GattCharacteristicData> = new Map();
-        for (const service of services) {
-            const characteristics = await service.getCharacteristics();
-            console.log({ service, characteristics });
-            characteristics.forEach(characteristic => {
+        for (const i in services) {
+            const chars = await services[i].getCharacteristics();
+            console.log({ service: services[i], chars, meta: metaData[i] });
+            chars.forEach((characteristic) => {
                 characteristic.addEventListener('characteristicvaluechanged', handleChange);
                 characteristic.startNotifications().catch(error => console.error('Error starting notifications:', error));
             });
             let charMap: GattCharacteristicData = new Map();
-            characteristics.forEach(characteristic => charMap.set(characteristic, null));
-            serviceMap.set(service.uuid, charMap);
+            chars.forEach((characteristic, j) => charMap.set(characteristic, {
+                service: metaData[i].name,
+                name: metaData[i].characteristics[j].name,
+                data: null
+            }));
+            serviceMap.set(services[i].uuid, charMap);
         };
         setCharacteristics(serviceMap);
     }
@@ -89,10 +95,11 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, ga
             // Create a new Map from the previous characteristics
             const newCharacteristics = new Map(prevCharacteristics);
             const service = newCharacteristics.get(characteristic.service.uuid);
-            if (service?.has(characteristic)) {
+            const character = service?.get(characteristic);
+            if (character) {
                 // Create a new Map from the service
                 const newService = new Map(service);
-                newService.set(characteristic, characteristic.value!);
+                newService.set(characteristic, { ...character, data: characteristic.value! });
                 newCharacteristics.set(characteristic.service.uuid, newService);
             }
             return newCharacteristics;
@@ -113,7 +120,7 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, ga
             disconnectDevice,
             server,
             services,
-            gattServices,
+            metaData,
             characteristics,
         }}>
             {children}

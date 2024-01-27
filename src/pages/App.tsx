@@ -23,21 +23,21 @@ const App = (): JSX.Element => {
         <br />
         {device ? (
           <div>
-            <table>
+            <table className="table w-full">
               <thead>
                 <tr>
-                  <th>Service UUID</th>
-                  <th>Characteristic UUID</th>
-                  <th>Value</th>
+                  <th className="text-left">Service</th>
+                  <th className="text-left">Characteristic</th>
+                  <th className="text-left">Value</th>
                 </tr>
               </thead>
               <tbody>
-                {Array.from(characteristics.entries()).map(([serviceUuid, characteristicData]) =>
-                  Array.from(characteristicData.entries()).map(([characteristic, value]) => (
-                    <tr key={`${serviceUuid}-${characteristic.uuid}`}>
-                      <td>{serviceUuid}</td>
-                      <td>{characteristic.uuid}</td>
-                      <td>{value ? value.getInt8(0) : 'No Value'}</td>
+                {Array.from(characteristics.entries()).map(([_, characteristicData]) =>
+                  Array.from(characteristicData.entries()).map(([characteristic, { name, data, service }]) => (
+                    <tr key={`${service}-${characteristic.uuid}`} className="hover:bg-gray-100">
+                      <td>{service}</td>
+                      <td>{name}</td>
+                      <td>{data ? data.getInt8(0) : 'No Value'}</td>
                     </tr>
                   ))
                 )}

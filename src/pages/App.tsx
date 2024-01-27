@@ -7,7 +7,6 @@ const App = (): JSX.Element => {
     disconnectDevice,
     device,
     server,
-    services,
     characteristics
   } = useBLE();
   return (

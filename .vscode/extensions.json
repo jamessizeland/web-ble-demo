@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "austenc.tailwind-docs"
+        "austenc.tailwind-docs",
+        "ambooth.git-rename"
     ]
 }

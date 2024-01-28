@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^9.96.5",
+    "@react-three/fiber": "^8.15.15",
     "clsx": "^2.1.0",
     "daisyui": "^4.6.0",
     "dayjs": "^1.11.10",
@@ -18,12 +20,14 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.3",
     "react-toastify": "^10.0.4",
+    "three": "^0.160.1",
     "webbluetooth": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.8",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
+    "@types/three": "^0.160.0",
     "@types/web-bluetooth": "^0.0.20",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",

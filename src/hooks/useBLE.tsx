@@ -27,7 +27,7 @@ export interface GattCharacteristic {
     uuid: string;
 }
 
-export type GattCharacteristicData = Map<BluetoothRemoteGATTCharacteristic, { service: string, name: string, data: DataView | null }>;
+export type GattCharacteristicData = Map<string, { service: string, name: string, data: DataView | null }>;
 
 const BLEContext = createContext<BLEContextType | null>(null);
 
@@ -66,6 +66,7 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, me
         return services;
     };
 
+    // Register all characteristics for each service
     const registerGattCharacteristics = async (services: BluetoothRemoteGATTService[]) => {
         let serviceMap: Map<string, GattCharacteristicData> = new Map();
         for (const i in services) {
@@ -76,7 +77,7 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, me
                 characteristic.startNotifications().catch(error => console.error('Error starting notifications:', error));
             });
             let charMap: GattCharacteristicData = new Map();
-            chars.forEach((characteristic, j) => charMap.set(characteristic, {
+            chars.forEach((characteristic, j) => charMap.set(characteristic.uuid, {
                 service: metaData[i].name,
                 name: metaData[i].characteristics[j].name,
                 data: null
@@ -86,6 +87,7 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, me
         setCharacteristics(serviceMap);
     }
 
+    // Handle changes to the characteristic value
     const handleChange = (event: Event) => {
         const characteristic = event.target as BluetoothRemoteGATTCharacteristic;
         console.log(`Characteristic ${characteristic.service.uuid} value changed to ${characteristic.value?.getInt8(0)}`);
@@ -95,11 +97,11 @@ export const BLEProvider = ({ children, options = { acceptAllDevices: true }, me
             // Create a new Map from the previous characteristics
             const newCharacteristics = new Map(prevCharacteristics);
             const service = newCharacteristics.get(characteristic.service.uuid);
-            const character = service?.get(characteristic);
+            const character = service?.get(characteristic.uuid);
             if (character) {
                 // Create a new Map from the service
                 const newService = new Map(service);
-                newService.set(characteristic, { ...character, data: characteristic.value! });
+                newService.set(characteristic.uuid, { ...character, data: characteristic.value! });
                 newCharacteristics.set(characteristic.service.uuid, newService);
             }
             return newCharacteristics;
